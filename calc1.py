@@ -14,35 +14,48 @@ class Token:
 class Interpreter:
     def __init__(self, text):
         self.text = text
-        self.pos = 0
-        self.current_token = None
+        self.pos = 0 # 指向当前的下一个位置
+        self.current_token = None # 当前token
+        self.current_char = self.text[self.pos] # 指向当前的下一个字符
 
     def error(self):
         raise Exception("Error parsing input")
     
-    def get_next_token(self):
-        text = self.text
-
+    def advance(self):
+        """移动pos,更新current_char
+        """
+        self.pos += 1
         if self.pos > len(self.text)-1:
-            return Token(EOF, None)
-        
-        current_char = text[self.pos]
-        if current_char.isdigit():
-            token = Token(INTEGER, int(current_char))
-            self.pos += 1
-            return token
-        
-        if current_char == "+":
-            token = Token(PLUS, "+")
-            self.pos += 1
-            return token
-        
-        if current_char == "-":
-            token = Token(MINUS, "-")
-            self.pos += 1
-            return token
+            self.current_char = None
+        else:
+            self.current_char = self.text[self.pos]
+    
+    def skip_whitespace(self):
+        while self.current_char is not None and self.current_char.isspace():
+            self.advance()
+    
+    def get_next_token(self):
+        while self.current_char is not None:
+            if self.current_char.isspace():
+                self.skip_whitespace()
+                continue
+            if self.current_char.isdigit():
+                token = Token(INTEGER, int(self.current_char))
+                self.advance()
+                return token
+            
+            if self.current_char == "+":
+                token = Token(PLUS, "+")
+                self.advance()
+                return token
+            
+            if self.current_char == "-":
+                token = Token(MINUS, "-")
+                self.advance()
+                return token
 
-        self.error()
+            self.error()
+        return Token(EOF, None)
 
     def eat(self, token_type):
         if self.current_token.type == token_type:
