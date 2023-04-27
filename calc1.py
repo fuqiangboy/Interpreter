@@ -33,6 +33,13 @@ class Interpreter:
     def skip_whitespace(self):
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
+
+    def integer(self):
+        result = ""
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+        return int(result)
     
     def get_next_token(self):
         while self.current_char is not None:
@@ -40,8 +47,7 @@ class Interpreter:
                 self.skip_whitespace()
                 continue
             if self.current_char.isdigit():
-                token = Token(INTEGER, int(self.current_char))
-                self.advance()
+                token = Token(INTEGER, self.integer())
                 return token
             
             if self.current_char == "+":
