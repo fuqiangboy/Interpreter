@@ -19,7 +19,7 @@ class Interpreter:
         self.current_char = self.text[self.pos] # 指向当前的下一个字符
 
     def error(self):
-        raise Exception("Error parsing input")
+        raise Exception("Invalid syntax")
     
     def advance(self):
         """移动pos,更新current_char
@@ -46,6 +46,7 @@ class Interpreter:
             if self.current_char.isspace():
                 self.skip_whitespace()
                 continue
+
             if self.current_char.isdigit():
                 token = Token(INTEGER, self.integer())
                 return token
@@ -68,26 +69,29 @@ class Interpreter:
             self.current_token = self.get_next_token()
         else:
             self.error()
+    
+    def term(self):
+        """判断token的类型是否满足句法,返回token的值
+        tips:先用一个变量保存上一个token
+        """
+        token = self.current_token
+        self.eat(INTEGER)
+        return token.value
 
     def expr(self):
         self.current_token = self.get_next_token()
 
-        left = self.current_token
-        self.eat(INTEGER)
+        result = self.term()
 
-        op = self.current_token
-        if op.type == PLUS:
-            self.eat(PLUS)
-        else:
-            self.eat(MINUS)
+        while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
+            if token.type is PLUS:
+                self.eat(PLUS)
+                result += self.term()
+            else:
+                self.eat(MINUS)
+                result -= self.term()
 
-        right = self.current_token
-        self.eat(INTEGER)
-
-        if op.type == PLUS:
-            result = left.value + right.value
-        else:
-            result = left.value - right.value
         return result
 
 def main():
