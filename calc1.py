@@ -1,4 +1,4 @@
-INTEGER, PLUS, MINUS, EOF = "INTEGER", "PLUS", "MINUS", "EOF"
+INTEGER, MUL, DIV, EOF = "INTEGER", "MUL", "DIV", "EOF"
 
 class Token:
     def __init__(self, type, value):
@@ -10,16 +10,15 @@ class Token:
     
     def __repr__(self) -> str:
         return self.__str__()
-    
-class Interpreter:
+
+class Lexer:
     def __init__(self, text):
         self.text = text
-        self.pos = 0 # 指向当前的下一个位置
-        self.current_token = None # 当前token
-        self.current_char = self.text[self.pos] # 指向当前的下一个字符
-
+        self.pos = 0
+        self.current_char = self.text[self.pos]
+    
     def error(self):
-        raise Exception("Invalid syntax")
+        raise Exception("Invalid character")
     
     def advance(self):
         """移动pos,更新current_char
@@ -51,26 +50,32 @@ class Interpreter:
                 token = Token(INTEGER, self.integer())
                 return token
             
-            if self.current_char == "+":
-                token = Token(PLUS, "+")
+            if self.current_char == "*":
                 self.advance()
-                return token
+                return Token(MUL, "*")
             
-            if self.current_char == "-":
-                token = Token(MINUS, "-")
+            if self.current_char == "/":
                 self.advance()
-                return token
+                return Token(DIV, "/")
 
             self.error()
         return Token(EOF, None)
 
+class Interpreter:
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.get_next_token()
+
+    def error(self):
+        raise Exception("Invalid syntax")    
+
     def eat(self, token_type):
         if self.current_token.type == token_type:
-            self.current_token = self.get_next_token()
+            self.current_token = self.lexer.get_next_token()
         else:
             self.error()
     
-    def term(self):
+    def factor(self):
         """判断token的类型是否满足句法,返回token的值
         tips:先用一个变量保存上一个token
         """
@@ -79,18 +84,16 @@ class Interpreter:
         return token.value
 
     def expr(self):
-        self.current_token = self.get_next_token()
+        result = self.factor()
 
-        result = self.term()
-
-        while self.current_token.type in (PLUS, MINUS):
+        while self.current_token.type in (MUL, DIV):
             token = self.current_token
-            if token.type is PLUS:
-                self.eat(PLUS)
-                result += self.term()
-            else:
-                self.eat(MINUS)
-                result -= self.term()
+            if token.type is MUL:
+                self.eat(MUL)
+                result = result * self.factor()
+            elif token.type is DIV:
+                self.eat(DIV)
+                result = result / self.factor()
 
         return result
 
@@ -102,7 +105,8 @@ def main():
             break
         if not text:
             continue
-        interpreter = Interpreter(text)
+        lexer = Lexer(text)
+        interpreter = Interpreter(lexer)
         result = interpreter.expr()
         print(result)
 
