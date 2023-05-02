@@ -1,4 +1,4 @@
-INTEGER, MUL, DIV, EOF = "INTEGER", "MUL", "DIV", "EOF"
+INTEGER, PLUS, MINUS, MUL, DIV, EOF = ("INTEGER", "PLUS", "MINUS", "MUL", "DIV", "EOF")
 
 class Token:
     def __init__(self, type, value):
@@ -42,13 +42,21 @@ class Lexer:
     
     def get_next_token(self):
         while self.current_char is not None:
+            
             if self.current_char.isspace():
                 self.skip_whitespace()
                 continue
 
             if self.current_char.isdigit():
-                token = Token(INTEGER, self.integer())
-                return token
+                return Token(INTEGER, self.integer())
+            
+            if self.current_char == "+":
+                self.advance()
+                return Token(PLUS, "+")
+            
+            if self.current_char == "MINUS":
+                self.advance()
+                return Token(MINUS, "-")
             
             if self.current_char == "*":
                 self.advance()
@@ -59,6 +67,7 @@ class Lexer:
                 return Token(DIV, "/")
 
             self.error()
+
         return Token(EOF, None)
 
 class Interpreter:
@@ -82,18 +91,32 @@ class Interpreter:
         token = self.current_token
         self.eat(INTEGER)
         return token.value
-
-    def expr(self):
+    
+    def term(self):
         result = self.factor()
 
         while self.current_token.type in (MUL, DIV):
             token = self.current_token
-            if token.type is MUL:
+            if token.type == MUL:
                 self.eat(MUL)
                 result = result * self.factor()
-            elif token.type is DIV:
+            elif token.type == DIV:
                 self.eat(DIV)
                 result = result / self.factor()
+        
+        return result
+
+    def expr(self):
+        result = self.factor()
+
+        while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
+            if token.type == PLUS:
+                self.eat(PLUS)
+                result = result + self.term()
+            elif token.type == MINUS:
+                self.eat(MINUS)
+                result = result - self.term()
 
         return result
 
