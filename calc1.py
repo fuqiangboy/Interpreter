@@ -1,4 +1,6 @@
-INTEGER, PLUS, MINUS, MUL, DIV, EOF = ("INTEGER", "PLUS", "MINUS", "MUL", "DIV", "EOF")
+INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF = (
+    "INTEGER", "PLUS", "MINUS", "MUL", "DIV", "LPAREN", "RPAREN", "EOF"
+    )
 
 class Token:
     def __init__(self, type, value):
@@ -6,7 +8,10 @@ class Token:
         self.value = value
 
     def __str__(self) -> str:
-        return "Token({type}, {value})".format(type=self.type, value=repr(self.value))
+        return "Token({type}, {value})".format(
+            type=self.type, 
+            value=repr(self.value)
+        )
     
     def __repr__(self) -> str:
         return self.__str__()
@@ -54,7 +59,7 @@ class Lexer:
                 self.advance()
                 return Token(PLUS, "+")
             
-            if self.current_char == "MINUS":
+            if self.current_char == "-":
                 self.advance()
                 return Token(MINUS, "-")
             
@@ -65,6 +70,14 @@ class Lexer:
             if self.current_char == "/":
                 self.advance()
                 return Token(DIV, "/")
+            
+            if self.current_char == "(":
+                self.advance()
+                return Token(LPAREN, "(")
+            
+            if self.current_char == ")":
+                self.advance()
+                return Token(RPAREN, ")")
 
             self.error()
 
@@ -89,8 +102,17 @@ class Interpreter:
         tips:先用一个变量保存上一个token
         """
         token = self.current_token
-        self.eat(INTEGER)
-        return token.value
+
+        if token.type == INTEGER:
+            self.eat(INTEGER)
+            return token.value
+        elif token.type == LPAREN:
+            self.eat(LPAREN)
+            result = self.expr()
+            self.eat(RPAREN)
+            return result
+        else:
+            self.error()
     
     def term(self):
         result = self.factor()
@@ -107,7 +129,7 @@ class Interpreter:
         return result
 
     def expr(self):
-        result = self.factor()
+        result = self.term()
 
         while self.current_token.type in (PLUS, MINUS):
             token = self.current_token
